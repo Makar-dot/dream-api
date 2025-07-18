@@ -32,7 +32,6 @@ class DreamResponse(BaseModel):
 async def dream_endpoint(request: DreamRequest):
     print(f"💤 Получен сон: {request.dream}")
 
-    # Трактовка сна
     try:
         print("📘 Запрос к OpenAI...")
         response = openai.ChatCompletion.create(
@@ -49,11 +48,10 @@ async def dream_endpoint(request: DreamRequest):
         print(f"❌ OpenAI ошибка: {e}")
         interpretation = "Не удалось получить трактовку сна."
 
-    # Генерация видео
     try:
-        print("🎥 Генерация видео через cjwbw/text-to-video...")
+        print("🎥 Генерация видео через zeroscope-v2-xl...")
         output = replicate.run(
-            "cjwbw/text-to-video",
+            "zeroscope/zeroscope-v2-xl",
             input={"prompt": request.dream}
         )
         video_url = output[0] if isinstance(output, list) and output else ""
