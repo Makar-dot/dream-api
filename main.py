@@ -5,13 +5,13 @@ import openai
 import replicate
 import os
 
-# Подключаем ключи
-openai.api_key = os.environ["OPENAI_API_KEY"]
-os.environ["REPLICATE_API_TOKEN"] = os.environ["REPLICATE_API_TOKEN"]
+# Загружаем ключи из переменных среды
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+os.environ["REPLICATE_API_TOKEN"] = os.environ.get("REPLICATE_API_TOKEN")
 
 app = FastAPI()
 
-# Разрешаем CORS
+# CORS (разрешаем все источники)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,7 +31,7 @@ class DreamResponse(BaseModel):
 
 @app.post("/dream", response_model=DreamResponse)
 async def dream_endpoint(request: DreamRequest):
-    # Трактовка сна
+    # 1. Трактовка сна
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -42,17 +42,19 @@ async def dream_endpoint(request: DreamRequest):
             max_tokens=500
         )
         interpretation = response.choices[0].message.content.strip()
-    except Exception:
+    except Exception as e:
+        print(f"OpenAI Error: {e}")
         interpretation = "Не удалось получить трактовку."
 
-    # Генерация видео
+    # 2. Генерация видео
     try:
         output = replicate.run(
             "cjwbw/video-to-video:8e24824b2c246b85bbfe05877e6caa69694491cbfb8b0f063f1fb681818e224d",
             input={"prompt": request.dream}
         )
         video_url = output[0] if isinstance(output, list) and output else ""
-    except Exception:
+    except Exception as e:
+        print(f"Replicate Error: {e}")
         video_url = ""
 
     return DreamResponse(interpretation=interpretation, video_url=video_url)
