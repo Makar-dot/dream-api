@@ -49,9 +49,9 @@ async def dream_endpoint(request: DreamRequest):
         interpretation = "Не удалось получить трактовку сна."
 
     try:
-        print("🎥 Запрос к Replicate...")
+        print("🎥 Генерация видео через lucataco/svd...")
         output = replicate.run(
-            "cjwbw/video-to-video",  # убрали :hash
+            "lucataco/svd",
             input={"prompt": request.dream}
         )
         video_url = output[0] if isinstance(output, list) and output else ""
