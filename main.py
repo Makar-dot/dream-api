@@ -7,12 +7,10 @@ import replicate
 import os
 
 load_dotenv()
-
 openai.api_key = os.getenv("OPENAI_API_KEY")
 os.environ["REPLICATE_API_TOKEN"] = os.getenv("REPLICATE_API_TOKEN")
 
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,34 +30,36 @@ class DreamResponse(BaseModel):
 async def dream_endpoint(request: DreamRequest):
     print(f"💤 Получен сон: {request.dream}")
 
-    # 1. Трактовка через OpenAI
     try:
         print("📘 Запрос к OpenAI...")
-        response = openai.ChatCompletion.create(
+        resp = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Ты толкователь снов по Евгению Цветкову."},
-                {"role": "user", "content": request.dream}
+                {"role":"system","content":"Ты толкователь снов по Евгению Цветкову. Дай трактовку."},
+                {"role":"user","content": request.dream}
             ],
             max_tokens=500
         )
-        interpretation = response.choices[0].message.content.strip()
+        interpretation = resp.choices[0].message.content.strip()
         print("✅ Трактовка готова")
     except Exception as e:
-        print(f"❌ OpenAI ошибка: {e}")
+        print(f"❌ OpenAI ошибка:", e)
         interpretation = "Не удалось получить трактовку."
 
-    # 2. Генерация видео через tencent/hunyuan-video
     try:
-        print("🎥 Генерация видео через tencent/hunyuan-video...")
+        print("🎥 Генерация видео через seedance-1-lite...")
         output = replicate.run(
-            "tencent/hunyuan-video",
-            input={"prompt": request.dream}
+            "bytedance/seedance-1-lite",
+            input={
+                "prompt": request.dream,
+                "video_length": "5s",
+                "resolution": "720p"
+            }
         )
-        video_url = output[0] if isinstance(output, list) and output else ""
+        video_url = output[0] if isinstance(output, list) else ""
         print(f"✅ Видео URL: {video_url}")
     except Exception as e:
-        print(f"❌ Replicate ошибка: {e}")
+        print(f"❌ Replicate ошибка:", e)
         video_url = ""
 
     return DreamResponse(interpretation=interpretation, video_url=video_url)
