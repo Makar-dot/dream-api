@@ -30,9 +30,9 @@ class DreamResponse(BaseModel):
 async def dream_endpoint(request: DreamRequest):
     print(f"💤 Получен сон: {request.dream}")
 
+    # OpenAI трактовка
     try:
-        print("📘 Запрос к OpenAI...")
-        resp = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role":"system","content":"Ты толкователь снов по Евгению Цветкову. Дай трактовку."},
@@ -40,14 +40,14 @@ async def dream_endpoint(request: DreamRequest):
             ],
             max_tokens=500
         )
-        interpretation = resp.choices[0].message.content.strip()
+        interpretation = response.choices[0].message.content.strip()
         print("✅ Трактовка готова")
     except Exception as e:
-        print(f"❌ OpenAI ошибка:", e)
+        print("❌ OpenAI ошибка:", e)
         interpretation = "Не удалось получить трактовку."
 
+    # Генерация видео
     try:
-        print("🎥 Генерация видео через seedance-1-lite...")
         output = replicate.run(
             "bytedance/seedance-1-lite",
             input={
@@ -57,9 +57,9 @@ async def dream_endpoint(request: DreamRequest):
             }
         )
         video_url = output[0] if isinstance(output, list) else ""
-        print(f"✅ Видео URL: {video_url}")
+        print("✅ Видео URL:", video_url)
     except Exception as e:
-        print(f"❌ Replicate ошибка:", e)
+        print("❌ Replicate ошибка:", e)
         video_url = ""
 
     return DreamResponse(interpretation=interpretation, video_url=video_url)
