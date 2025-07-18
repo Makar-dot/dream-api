@@ -5,7 +5,7 @@ import openai
 import replicate
 import os
 
-# Настройки
+# Подключаем ключи
 openai.api_key = os.environ["OPENAI_API_KEY"]
 os.environ["REPLICATE_API_TOKEN"] = os.environ["REPLICATE_API_TOKEN"]
 
@@ -20,17 +20,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Модели
+# Модель запроса
 class DreamRequest(BaseModel):
-    dream: str   # ← клиент отправляет { "dream": "..." }
+    dream: str
 
+# Модель ответа
 class DreamResponse(BaseModel):
     interpretation: str
     video_url: str
 
 @app.post("/dream", response_model=DreamResponse)
 async def dream_endpoint(request: DreamRequest):
-    # 1. Трактовка сна
+    # Трактовка сна
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -44,7 +45,7 @@ async def dream_endpoint(request: DreamRequest):
     except Exception:
         interpretation = "Не удалось получить трактовку."
 
-    # 2. Генерация видео
+    # Генерация видео
     try:
         output = replicate.run(
             "cjwbw/video-to-video:8e24824b2c246b85bbfe05877e6caa69694491cbfb8b0f063f1fb681818e224d",
